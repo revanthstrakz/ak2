@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2018 Raphiel Rollerscaperers (raphielscape)
+#
+# Ramdisk file for Kat Kernel
+#
+# DO NOT MODIFY THIS FILE
+
+on init
+    # Nothing here once again
+
+on late-fs
+    # Filesystemworks
+    write /sys/block/mmcblk0/queue/nr_requests 256
+
+on property:sys.boot_completed=1
+    # According to Qualcomm, this legacy value improves first launch latencies
+    # Stock value is 512k
+    setprop dalvik.vm.heapminfree 2m
+    setprop sys.use_fifo_ui 1
+
+    # Set permissions
+    chown system system /sys/devices/platform/kcal_ctrl.0/kcal*
+    chown system system /sys/class/devfreq/1c00000.qcom,kgsl-3d0/governor
+    chown system system /sys/class/devfreq/1c00000.qcom,kgsl-3d0/max_freq
+    chown system system /sys/class/devfreq/1c00000.qcom,kgsl-3d0/min_freq
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+
+    # LMK Things we see everyday
+    write /sys/module/lowmemorykiller/parameters/minfree "18432,23040,27648,32256,36864,46080"
+
+    # ZRAM Wednesday my dudes
+    write /sys/block/zram0/reset 1
+    write /sys/block/zram0/disksize 1073741824
+
+    # Executions stager
+    exec u:r:init:s0 -- /init.raphiel.sh
+    exec u:r:su:s0 root root -- /init.raphiel.sh
+
+# Make sure Qualcomm init doesn't break this one and in case that our set
+# ignored in first boot coz of sepolicy inject nonexistence, use pwrutilx
+on property:init.svc.qcom-post-boot=stopped
+    write /sys/block/mmcblk0/queue/read_ahead_kb 2048
+    write /sys/block/mmcblk0/queue/nr_requests 256
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "pwrutilx"
