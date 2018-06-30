@@ -27,7 +27,7 @@ ramdisk_compression=auto;
 # set permissions/ownership for included ramdisk files
 chmod -R 750 $ramdisk/*;
 chown -R root:root $ramdisk/*;
-
+chmod 644 $ramdisk/perfboostsconfig.xml;
 
 ## AnyKernel install
 dump_boot;
@@ -55,7 +55,11 @@ remove_line init.rc "    # Tweak background writeout"
 remove_line init.rc "    write /proc/sys/vm/dirty_expire_centisecs 200"
 remove_line init.rc "    write /proc/sys/vm/dirty_background_ratio  5"
 
-$bin/sepolicy-inject -s init -t rootfs -c file -p execute_no_trans -P sepolicy
+# sepolicy
+$bin/sepolicy-inject -s init -t rootfs -c file -p execute_no_trans -P sepolicy;
+$bin/sepolicy-inject -s init -t vendor_configs_file -c file -p mounton -P sepolicy;
+$bin/sepolicy-inject -s init -t vendor_file -c file -p mounton -P sepolicy;
+$bin/sepolicy-inject -s hal_perf_default -t rootfs -c file -p getattr,read,open -P sepolicy;
 
 # end ramdisk changes
 
